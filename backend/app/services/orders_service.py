@@ -37,11 +37,11 @@ def create_order(db: Session, payload: OrderCreateIn) -> OrderCreateOut:
         select(Customer).where(Customer.store_id == store.id, Customer.whatsapp_e164 == normalized_wa)
     )
     if not customer:
-        customer = Customer(store_id=store.id, name=payload.customer_name, whatsapp_e164=normalized_wa)
+        customer = Customer(store_id=store.id, name_last=payload.customer_name, whatsapp_e164=normalized_wa)
         db.add(customer)
         db.flush()
     else:
-        customer.name = payload.customer_name
+        customer.name_last = payload.customer_name
 
     product_ids = [item.product_id for item in payload.items]
     products = db.scalars(
@@ -86,6 +86,8 @@ def create_order(db: Session, payload: OrderCreateIn) -> OrderCreateOut:
         address_text=payload.address_text,
         notes=payload.notes,
         payment_method=payload.payment_method,
+        customer_name=payload.customer_name,
+        customer_whatsapp=normalized_wa,
         subtotal=subtotal,
         delivery_fee=payload.delivery_fee,
         total=total,
@@ -95,8 +97,10 @@ def create_order(db: Session, payload: OrderCreateIn) -> OrderCreateOut:
     db.add(order)
     db.flush()
 
-    message = build_whatsapp_message(order, customer.name, normalized_wa, order_items)
+    message = build_whatsapp_message(order, payload.customer_name, normalized_wa, order_items)
     order.whatsapp_message = message
+    customer.total_orders += 1
+    customer.last_order_at = order.created_at
     db.commit()
 
     return OrderCreateOut(

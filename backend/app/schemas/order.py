@@ -12,8 +12,8 @@ class OrderItemIn(BaseModel):
 
 
 class OrderCreateIn(BaseModel):
-    store_slug: str = Field(min_length=2, max_length=120)
-    customer_name: str = Field(min_length=2, max_length=255)
+    store_slug: str = Field(min_length=2, max_length=80)
+    customer_name: str = Field(min_length=2, max_length=140)
     customer_whatsapp: str
     delivery_method: DeliveryMethod
     address_text: str | None = None
